@@ -49,20 +49,23 @@ def index():
             "match (you) <-[:NEXT]- (parent:Property)"
             "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
             "set you.score = you.score + 1 "
-            "return you.name, parent.name"
+            "return you.name, parent.name, you.synonym"
         )).data()
         properties = {}
+        translate_dict = dict()
         for each in cursor:
             if each['parent.name'] not in properties:
                 properties[each['parent.name']] = [each['you.name']]
             else:
                 properties[each['parent.name']].append(each['you.name'])
 
+            translate_dict[each['you.name']] = each['you.synonym'] if 'you.synonym' in each else None
+
         # Insert default properties
         cursor = db.graph.run((
             "match (you) <-[:NEXT]- (parent:Property)"
             "where you.score > 1 "
-            "return distinct parent.name, you.name, you.score "
+            "return distinct parent.name, you.name, you.score, you.synonym "
             "order by you.score desc"
         )).data()
         response_item['item']['property'] = properties
@@ -71,6 +74,7 @@ def index():
         for each in cursor:
             if each['parent.name'] not in properties:
                 preferences[each['parent.name']] = [each['you.name']]
+            translate_dict[each['you.name']] = each['you.synonym'] if 'you.synonym' in each else None
 
         response_item['item']['preferences'] = preferences
 
@@ -81,6 +85,8 @@ def index():
             "set you.score = you.score + 1 "
             "return parent.name, you.name"
         )).data()
+
+        response_item['translate'] = translate_dict
         response_item['type'] = cursor[0]['parent.name']
         response_data['t'].append(response_item)
 
