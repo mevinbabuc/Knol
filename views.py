@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
+from flask_cors import CORS
 from extensions import db
 from models import build_brain
 
 
 bp = Blueprint('bp', __name__)
+CORS(bp)
 
 
 @bp.route('/')
@@ -24,7 +26,10 @@ def index():
         "set you.score = you.score + 1 "
         "return you.name"
     )).data()
-    response_data['intent'] = cursor[0]['you.name']
+    try:
+        response_data['intent'] = cursor[0]['you.name']
+    except Exception as e:
+        response_data['intent'] = None
 
     response_data['query_parts'] = [each.strip() for each in query.split('and')]
     for each_query in response_data['query_parts']:
@@ -42,7 +47,11 @@ def index():
             "set you.score = you.score + 1 "
             "return you.name"
         )).data()
-        response_item['item']['name'] = cursor[0]['you.name']
+
+        try:
+            response_item['item']['name'] = cursor[0]['you.name']
+        except Exception as e:
+            response_item['item']['name'] = None
 
         # Find Properties
         cursor = db.graph.run((
@@ -74,7 +83,7 @@ def index():
         for each in cursor:
             if each['parent.name'] not in properties:
                 preferences[each['parent.name']] = [each['you.name']]
-            translate_dict[each['you.name']] = each['you.synonym'] if 'you.synonym' in each else None
+                translate_dict[each['you.name']] = each['you.synonym'] if 'you.synonym' in each else None
 
         response_item['item']['preferences'] = preferences
 
@@ -87,7 +96,11 @@ def index():
         )).data()
 
         response_item['translate'] = translate_dict
-        response_item['type'] = cursor[0]['parent.name']
+        try:
+            response_item['type'] = cursor[0]['parent.name']
+        except Exception as e:
+            response_item['type'] = None
+
         response_data['t'].append(response_item)
 
     return jsonify(response_data)
