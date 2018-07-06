@@ -22,13 +22,16 @@ class Intent(db.Model):
 
     item = db.RelatedTo('Item')
     name = db.Property()
+    synonym = db.Property()
     score = db.Property()
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, synonym=None):
         _intent = cls()
         _intent.name = name
         _intent.score = 0
+        if synonym:
+            _intent.synonym = synonym
         db.graph.create(_intent)
         return _intent
 
@@ -44,13 +47,16 @@ class Item(db.Model):
     property = db.RelatedTo('Property')
 
     name = db.Property()
+    synonym = db.Property()
     score = db.Property()
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, synonym=None):
         _item = cls()
         _item.name = name
         _item.score = 0
+        if synonym:
+            _item.synonym = synonym
         db.graph.create(_item)
         return _item
 
@@ -70,13 +76,16 @@ class Property(db.Model):
     next = db.RelatedTo('Property')
 
     name = db.Property()
+    synonym = db.Property()
     score = db.Property()
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, synonym=None):
         _property = cls()
         _property.name = name
         _property.score = 0
+        if synonym:
+            _property.synonym = synonym
         db.graph.create(_property)
         return _property
 
@@ -90,27 +99,27 @@ def build_brain():
 
     # Create the Neuron
     neuron = Neuron.create()
-    intent = Intent.create("buy")
+    intent = Intent.create("buy", "kharidna")
 
-    cloth = Item.create("cloth")
+    cloth = Item.create("cloth", "kapda")
     jacket = Item.create("jacket")
-    pant = Item.create("pant")
+    pant = Item.create("pant", "patloon")
 
     cloth.add_item(jacket)
     cloth.add_item(pant)
 
-    color_property = Property.create("color")
-    red = Property.create("red")
-    black = Property.create("black")
-    blue = Property.create("blue")
+    color_property = Property.create("color", "rang")
+    red = Property.create("red", "lal")
+    black = Property.create("black", "kala")
+    blue = Property.create("blue", "neela")
 
     color_property.add_property(red)
     color_property.add_property(black)
     color_property.add_property(blue)
 
     material_property = Property.create("material")
-    cotton = Property.create("cotton")
-    polyster = Property.create("polyster")
+    cotton = Property.create("cotton", "rui")
+    polyster = Property.create("polyester")
 
     material_property.add_property(cotton)
     material_property.add_property(polyster)

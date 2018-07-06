@@ -20,7 +20,7 @@ def index():
     # Find Intent
     cursor = db.graph.run((
         "match (you) <-- (parent:Neuron)"
-        "where you.name in [{0}] ".format(tokens) +
+        "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
         "set you.score = you.score + 1 "
         "return you.name"
     )).data()
@@ -38,7 +38,7 @@ def index():
         # Find Items
         cursor = db.graph.run((
             "match (you) <-- (parent:Item)"
-            "where you.name in [{0}] ".format(tokens) +
+            "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
             "set you.score = you.score + 1 "
             "return you.name"
         )).data()
@@ -47,7 +47,7 @@ def index():
         # Find Properties
         cursor = db.graph.run((
             "match (you) <-[:NEXT]- (parent:Property)"
-            "where you.name in [{0}] ".format(tokens) +
+            "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
             "set you.score = you.score + 1 "
             "return you.name, parent.name"
         )).data()
@@ -77,7 +77,7 @@ def index():
         # Find item category
         cursor = db.graph.run((
             "match (you) <-[:NEXT*1..]- (parent:Item)"
-            "where you.name in [{0}] ".format(tokens) +
+            "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
             "set you.score = you.score + 1 "
             "return parent.name, you.name"
         )).data()
