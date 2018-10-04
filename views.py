@@ -34,8 +34,8 @@ def index():
     response_data['query_parts'] = [each.strip() for each in query.split('and')]
     for each_query in response_data['query_parts']:
         response_item = {
-            'item': {},
-            'type': ''
+            'items': {},
+            'r_type': ''
         }
 
         tokens = ','.join(["'{0}'".format(each) for each in each_query.split()])
