@@ -1,66 +1,11 @@
-Using this project:
-==================
+How to use
+----------
 
-- Install docker and docker-compose
-- Then run:
+```
+docker-compose up -d
+docker-compose exec web flask run --host=0.0.0.0 --port=5001
+```
 
-  docker-compose up --build
+For the Front end, open the front_end/index.html in chrome.
 
-
-What will that ^ do?
-===================
-
---> Launch one instance of Neo4J
---> Launch the flask builtin server
-
-
-Project Structure:
-=================
-
---> models.py:
-    ---------
-    definition of nodes and relationships
-    that comprise the model
-
---> factory.py:
-    ----------
-    the flask app factory pattern
-
---> extensions.py:
-    -------------
-    all flask extensions used get initialized here
-
---> views.py:
-    --------
-    the endpoints for the API/server
-
---> _cliapp.py:
-    ----------
-    the entrypoint to the flask app instance
-    for this project
-
-
-Running the tests:
-=================
-
-  docker-compose exec web pytest
-
-
-Other hints:
-===========
-
-  Try these in a new terminal:
-  (After running docker-compose up --build)
-
-    - docker-compose exec web sh
-    - docker-compose exec web python
-
-  - Dockerfile and docker-compose.yml is
-    where the magic happens
-
-
-References:
-==========
-
-- To learn more on Docker: https://diveintodocker.com/courses/dive-into-docker
-- py2neo docs: http://py2neo.org/v3/index.html
+also run the docker-compose for elastic search
