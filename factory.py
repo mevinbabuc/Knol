@@ -6,7 +6,9 @@ from views import bp
 def create_app(config=None):
     app = Flask(__name__)
     app.config.update({
-        'PY2NEO_HOST': 'db'
+        'PY2NEO_HOST': 'db',
+        'PY2NEO_USER': 'neo4j',
+        'PY2NEO_PASSWORD': 'Gale123#'
     })
     app.config.update(config or {})
 

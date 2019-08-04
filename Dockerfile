@@ -1,6 +1,6 @@
-FROM python:3.5-alpine
+FROM python:3.6
 
-RUN apk update && apk add git
+RUN apt-get update && apt-get install git
 
 RUN mkdir /app
 WORKDIR /app

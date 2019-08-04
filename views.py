@@ -1,40 +1,78 @@
+import string
 from flask import Blueprint, jsonify, request
 from flask_cors import CORS
 from extensions import db
 from models import build_brain
+
+from utils import stop_words
 
 
 bp = Blueprint('bp', __name__)
 CORS(bp)
 
 
+def tokenize(input):
+    """
+    Takes input as a string of sequences and
+    returns tokens along with their actual start and end index from
+    the original input sentence
+    """
+    def get_new_buffer():
+        return {
+            'start': None,
+            'end': None,
+            'surface_text': None,
+        }
+    buffer = get_new_buffer()
+    output = []
+    for idx, current in enumerate(input):
+        # Buffering start or continuing
+        if current.isalpha() or current.isdigit():
+            # Buffering start
+            if not buffer['surface_text']:
+                buffer['start'] = idx
+                buffer['surface_text'] = ''
+            buffer['surface_text'] += current
+        elif current == "'":
+            # if buffer is activate and
+            # two or more consecutive aprostophe then clear the buffer else continue
+            if idx > 1 and input[idx - 1] == "'" and buffer['surface_text']:
+                buffer['end'] = buffer['start'] + len(buffer['surface_text']) - 1
+                output.append(buffer)
+                buffer = get_new_buffer()
+            else:
+                continue
+        # Buffering end (no text or number) and there is some data in buffer
+        elif buffer['surface_text']:
+            buffer['end'] = idx - 1
+            output.append(buffer)
+            buffer = get_new_buffer()
+    # some buffer is left
+    if buffer['surface_text']:
+        buffer['end'] = buffer['start'] + len(buffer['surface_text']) - 1
+        output.append(buffer)
+    return output
+
+
+
 @bp.route('/')
 def index():
     raw_query = request.args.get('q', None)
     query = raw_query.replace(',', '')
-    tokens = ','.join(["'{0}'".format(each) for each in query.split()])
+    tokens = [e['surface_text'].lower() for e in tokenize(query)]
+
+
     response_data = {
         'q': raw_query,
         'query_parts': [],
         't': []
     }
 
-    # Find Intent
-    cursor = db.graph.run((
-        "match (you) <-- (parent:Neuron)"
-        "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
-        "set you.score = you.score + 1 "
-        "return you.name"
-    )).data()
-    try:
-        response_data['intent'] = cursor[0]['you.name']
-    except Exception as e:
-        response_data['intent'] = None
 
     response_data['query_parts'] = [each.strip() for each in query.split('and')]
     for each_query in response_data['query_parts']:
         response_item = {
-            'items': {},
+            'item': {},
             'r_type': ''
         }
 
@@ -44,12 +82,13 @@ def index():
         cursor = db.graph.run((
             "match (you) <-- (parent:Item)"
             "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
-            "set you.score = you.score + 1 "
-            "return you.name"
+            "set you.score = you.score + 1"
+            "return you.name, you.config"
         )).data()
 
         try:
             response_item['item']['name'] = cursor[0]['you.name']
+            response_item['item']['config'] = cursor[0]['you.config']
         except Exception as e:
             response_item['item']['name'] = None
 
@@ -58,7 +97,7 @@ def index():
             "match (you) <-[:NEXT]- (parent:Property)"
             "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
             "set you.score = you.score + 1 "
-            "return you.name, parent.name, you.synonym"
+            "return you.name, parent.name, you.synonym, you.config"
         )).data()
         properties = {}
         translate_dict = dict()
@@ -109,7 +148,8 @@ def index():
 @bp.route('/build')
 def build():
 
-    # db.graph.run("MATCH (n) DETACH DELETE n")
+    db.graph.run("MATCH (n) DETACH DELETE n")
+    db.graph.run("MATCH (n) DELETE n")
 
     n = build_brain()
 
