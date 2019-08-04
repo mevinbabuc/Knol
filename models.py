@@ -84,10 +84,10 @@ def build_brain():
 
     # Create the Neuron
     neuron = Neuron.create()
-    fashion = Item.create("Fashion")
+    fashion = Item.create("Electronics")
     neuron.add_item(fashion)
 
-    df = pd.read_json('/app/data/abc.json', lines=True)
+    df = pd.read_json('/app/data/bestbuy-us_product.json', lines=True)
 
     attributes_list = df['attributes']
     attr_name_id_mapping = {}

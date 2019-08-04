@@ -11,6 +11,26 @@ bp = Blueprint('bp', __name__)
 CORS(bp)
 
 
+def trans(data):
+    query = {
+      "query": {
+        "bool": {
+          "must_not" : {
+            "term" : { "subcategory" : "tablet" }
+          },
+          "must": [
+          ]
+        }
+      }
+    }
+    preferences = data['t'][0]['item']['preferences']
+    for k, v in preferences.items():
+        query['query']['bool']['must'].append({
+            k: v[0]
+        })
+    return query
+
+
 def tokenize(input):
     """
     Takes input as a string of sequences and
@@ -80,9 +100,9 @@ def index():
 
         # Find Items
         cursor = db.graph.run((
-            "match (you) <-- (parent:Item)"
+            "match (you) <-- (parent:Item) " +
             "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
-            "set you.score = you.score + 1"
+            "set you.score = you.score + 1 " +
             "return you.name, you.config"
         )).data()
 
@@ -94,9 +114,9 @@ def index():
 
         # Find Properties
         cursor = db.graph.run((
-            "match (you) <-[:NEXT]- (parent:Property)"
+            "match (you) <-[:NEXT]- (parent:Property) " +
             "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
-            "set you.score = you.score + 1 "
+            "set you.score = you.score + 1 " +
             "return you.name, parent.name, you.synonym, you.config"
         )).data()
         properties = {}
@@ -111,9 +131,9 @@ def index():
 
         # Insert default properties
         cursor = db.graph.run((
-            "match (you) <-[:NEXT]- (parent:Property)"
-            "where you.score > 1 "
-            "return distinct parent.name, you.name, you.score, you.synonym "
+            "match (you) <-[:NEXT]- (parent:Property) " +
+            "where you.score > 1 " +
+            "return distinct parent.name, you.name, you.score, you.synonym " +
             "order by you.score desc"
         )).data()
         response_item['item']['property'] = properties
@@ -128,9 +148,9 @@ def index():
 
         # Find item category
         cursor = db.graph.run((
-            "match (you) <-[:NEXT*1..]- (parent:Item)"
+            "match (you) <-[:NEXT*1..]- (parent:Item) " +
             "where you.name in [{0}] or you.synonym in [{0}] ".format(tokens) +
-            "set you.score = you.score + 1 "
+            "set you.score = you.score + 1 " +
             "return parent.name, you.name"
         )).data()
 
@@ -142,14 +162,14 @@ def index():
 
         response_data['t'].append(response_item)
 
-    return jsonify(response_data)
+    return jsonify(trans(response_data))
 
 
 @bp.route('/build')
 def build():
 
-    db.graph.run("MATCH (n) DETACH DELETE n")
-    db.graph.run("MATCH (n) DELETE n")
+    # db.graph.run("MATCH (n) DETACH DELETE n")
+    # db.graph.run("MATCH (n) DELETE n")
 
     n = build_brain()
 
